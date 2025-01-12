@@ -1,15 +1,19 @@
 #![no_std]
 #![no_main]
 
+mod motor_config;
+
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_time::Timer;
 use esp_hal::gpio::{Input, Level, Output, Pull};
-use esp_hal::ledc;
+use esp_hal::ledc::{
+    self,
+    channel::{self, Channel},
+    timer, LowSpeed,
+};
 use esp_hal::prelude::*;
 use {defmt_rtt as _, esp_backtrace as _};
-
-mod motor_config;
 
 #[main]
 async fn main(_spawner: Spawner) {
@@ -35,23 +39,14 @@ async fn main(_spawner: Spawner) {
     // initialize LEDC (for PWM control)
     info!("Pulse frequency: {}", motor_config::MOTOR_FREQ);
     let mut ledc = ledc::Ledc::new(peripherals.LEDC);
-    ledc.set_global_slow_clock(ledc::LSGlobalClkSource::APBClk);
-    let mut lstimer0 = ledc.timer::<ledc::LowSpeed>(ledc::timer::Number::Timer0);
-    lstimer0
-        .configure(ledc::timer::config::Config {
-            duty: ledc::timer::config::Duty::Duty8Bit,
-            clock_source: ledc::timer::LSClockSource::APBClk,
-            frequency: motor_config::MOTOR_FREQ.Hz(),
-        })
-        .unwrap();
-    let mut pwm_channel = ledc.channel(ledc::channel::Number::Channel0, step);
-    pwm_channel
-        .configure(ledc::channel::config::Config {
-            timer: &lstimer0,
-            duty_pct: 0,
-            pin_config: ledc::channel::config::PinConfig::PushPull,
-        })
-        .unwrap();
+    let mut lstimer0 = ledc.timer::<ledc::LowSpeed>(timer::Number::Timer0);
+    let mut pwm_channel = ledc.channel(channel::Number::Channel0, step);
+    configure_pwm(
+        &mut ledc,
+        &mut lstimer0,
+        &mut pwm_channel,
+        motor_config::MOTOR_FREQ,
+    );
 
     // event loop
     loop {
@@ -76,4 +71,28 @@ async fn main(_spawner: Spawner) {
             pwm_channel.set_duty(0).unwrap();
         }
     }
+}
+
+/// Configure LEDC channel for PWM output
+fn configure_pwm<'a>(
+    ledc: &mut ledc::Ledc<'_>,
+    lstimer: &'a mut timer::Timer<'a, LowSpeed>,
+    pwm_channel: &mut Channel<'a, LowSpeed>,
+    freq: u32,
+) {
+    ledc.set_global_slow_clock(ledc::LSGlobalClkSource::APBClk);
+    lstimer
+        .configure(timer::config::Config {
+            duty: timer::config::Duty::Duty8Bit,
+            clock_source: timer::LSClockSource::APBClk,
+            frequency: freq.Hz(),
+        })
+        .unwrap();
+    pwm_channel
+        .configure(channel::config::Config {
+            timer: lstimer,
+            duty_pct: 0,
+            pin_config: channel::config::PinConfig::PushPull,
+        })
+        .unwrap();
 }
