@@ -3,6 +3,7 @@
 
 use defmt::info;
 use embassy_executor::Spawner;
+use embassy_time::Timer;
 use esp_hal::gpio::{Input, Level, Output, Pull};
 use esp_hal::ledc;
 use esp_hal::prelude::*;
@@ -57,17 +58,22 @@ async fn main(_spawner: Spawner) {
         info!("Waiting for trigger button press");
         trigger_button.wait_for_falling_edge().await;
 
-        // if not in home position, move to home position
         if wheel_button.is_high() {
+            // if not in home position, move to home position
             info!("Moving motor to home position");
             pwm_channel.set_duty(50).unwrap();
             wheel_button.wait_for_low().await;
             pwm_channel.set_duty(0).unwrap();
-        }
+        } else {
+            // if in home position, rotate wheel one turn to fire
+            info!("Triggered - starting wheel rotation");
+            pwm_channel.set_duty(50).unwrap();
 
-        info!("Triggered - starting wheel rotation");
-        pwm_channel.set_duty(50).unwrap();
-        wheel_button.wait_for_falling_edge().await;
-        pwm_channel.set_duty(0).unwrap();
+            // ignore limit switch input until half of wheel rotation is complete
+            // to debounce limit switch signal which is very noisy
+            Timer::after_micros((motor_config::WHEEL_PERIOD_US / 2).into()).await;
+            wheel_button.wait_for_falling_edge().await;
+            pwm_channel.set_duty(0).unwrap();
+        }
     }
 }
