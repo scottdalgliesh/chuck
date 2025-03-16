@@ -6,35 +6,34 @@ mod motor_config;
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_time::Timer;
-use esp_hal::gpio::{Input, Level, Output, Pull};
+use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::ledc::{
-    self,
-    channel::{self, Channel},
-    timer, LowSpeed,
+    self, LowSpeed,
+    channel::{self, Channel, ChannelIFace},
+    timer::{self, TimerIFace},
 };
-use esp_hal::prelude::*;
+use esp_hal::time::Rate;
+use esp_hal::timer::timg::TimerGroup;
 use {defmt_rtt as _, esp_backtrace as _};
 
-#[main]
+#[esp_hal_embassy::main]
 async fn main(_spawner: Spawner) {
     // initialize mcu
-    let peripherals = esp_hal::init({
-        let mut config = esp_hal::Config::default();
-        config.cpu_clock = CpuClock::max();
-        config
-    });
+    let config = esp_hal::Config::default().with_cpu_clock(esp_hal::clock::CpuClock::max());
+    let peripherals = esp_hal::init(config);
 
     // initialize embassy
-    let timg0 = esp_hal::timer::timg::TimerGroup::new(peripherals.TIMG0);
-    esp_hal_embassy::init(timg0.timer0);
+    esp_hal_embassy::init(TimerGroup::new(peripherals.TIMG0).timer0);
 
     // initialize button GPIO
-    let mut wheel_button = Input::new(peripherals.GPIO6, Pull::Up);
-    let mut trigger_button = Input::new(peripherals.GPIO7, Pull::Up);
+    let input_config = InputConfig::default().with_pull(Pull::Up);
+    let mut wheel_button = Input::new(peripherals.GPIO6, input_config);
+    let mut trigger_button = Input::new(peripherals.GPIO7, input_config);
 
     // initialize stepper motor control GPIO
-    let mut _dir = Output::new(peripherals.GPIO20, Level::High);
-    let step = Output::new(peripherals.GPIO21, Level::Low);
+    let output_config = OutputConfig::default();
+    let mut _dir = Output::new(peripherals.GPIO20, Level::High, output_config);
+    let step = Output::new(peripherals.GPIO21, Level::Low, output_config);
 
     // initialize LEDC (for PWM control)
     info!("Pulse frequency: {}", motor_config::MOTOR_FREQ);
@@ -85,7 +84,7 @@ fn configure_pwm<'a>(
         .configure(timer::config::Config {
             duty: timer::config::Duty::Duty8Bit,
             clock_source: timer::LSClockSource::APBClk,
-            frequency: freq.Hz(),
+            frequency: Rate::from_hz(freq),
         })
         .unwrap();
     pwm_channel
