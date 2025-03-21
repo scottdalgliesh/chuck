@@ -2,8 +2,8 @@
 
 // Inputs
 pub const MOTOR_STEPS_PER_REV: u32 = 200;
-pub const MICRO_STEP_MODE_DIVISOR: u32 = 2;
-pub const RPM: u32 = 320;
+pub const MICRO_STEP_MODE_DIVISOR: u32 = 1;
+pub const RPM: u32 = 480;
 pub const GEAR_RATIO: u32 = 16;
 
 // Calculated values
