@@ -86,6 +86,7 @@ dependencies = [
 name = "chuck"
 version = "0.1.0"
 dependencies = [
+ "chuck_core",
  "defmt",
  "defmt-rtt",
  "embassy-executor",
@@ -95,6 +96,10 @@ dependencies = [
  "esp-hal-embassy",
  "static_cell",
 ]
+
+[[package]]
+name = "chuck_core"
+version = "0.1.0"
 
 [[package]]
 name = "critical-section"

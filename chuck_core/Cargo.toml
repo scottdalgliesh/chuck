@@ -1,0 +1,8 @@
+[package]
+edition = "2024"
+name = "chuck_core"
+version = "0.1.0"
+
+[dependencies]
+
+[dev-dependencies]
