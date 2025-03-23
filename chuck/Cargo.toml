@@ -1,4 +1,5 @@
 [package]
+default-run = "chuck"
 edition = "2024"
 name = "chuck"
 version = "0.1.0"
