@@ -2,7 +2,7 @@
 
 use embassy_futures::join::join;
 use embassy_time::Timer;
-use embedded_hal::digital::OutputPin;
+use esp_hal::gpio::Output;
 
 /// Micro-step mode for DRV8825 stepper motor.
 #[derive(Debug, Clone, Copy)]
@@ -80,19 +80,19 @@ fn step_frequency(rpm: u32, full_steps_per_rev: u32, step_mode: StepMode) -> u32
 
 /// basic stepper motor driver with support for linearly-ramped acceleration
 #[derive(Debug)]
-pub struct Motor<'a, Step: OutputPin, Dir: OutputPin> {
-    pub step_pin: &'a mut Step,
-    pub dir_pin: &'a mut Dir,
+pub struct Motor<'a> {
+    pub step_pin: &'a mut Output<'a>,
+    pub dir_pin: &'a mut Output<'a>,
     pub config: &'a MotorConfig,
 }
 
-impl<Step: OutputPin, Dir: OutputPin> Motor<'_, Step, Dir> {
+impl Motor<'_> {
     /// move motor by one step
     pub async fn step_once(&mut self, period_us: u32) {
         join(Timer::after_micros(period_us.into()), async {
-            let _ = self.step_pin.set_high();
+            self.step_pin.set_high();
             Timer::after_micros(self.config.min_pulse_on_us.into()).await;
-            let _ = self.step_pin.set_low();
+            self.step_pin.set_low();
         })
         .await;
     }
