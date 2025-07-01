@@ -19,7 +19,7 @@ This structure is used to facilitate testing of the core logic on the host PC wi
 * add electrical schematic
 
 ## License
-[CC-BY](https://creativecommons.org/licenses/by-sa/4.0/)
+[MIT](https://choosealicense.com/licenses/mit/) 
 
 ## Reference 
  - [CAD files](https://github.com/scottdalgliesh/chuck_models)
