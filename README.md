@@ -18,6 +18,9 @@ This structure is used to facilitate testing of the core logic on the host PC wi
 * add hardware list
 * add electrical schematic
 
+## License
+[CC-BY](https://creativecommons.org/licenses/by-sa/4.0/)
+
 ## Reference 
  - [CAD files](https://github.com/scottdalgliesh/chuck_models)
  - [ESP32-C3 Datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf)
